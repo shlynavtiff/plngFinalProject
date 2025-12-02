@@ -172,5 +172,3 @@ If it runs without errors, you're good to push!
 ---
 
 **Questions?** Message the group chat or ask the project leader.
-
-**Last Updated:** [Add date]
