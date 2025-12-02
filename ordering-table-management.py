@@ -1,9 +1,9 @@
 from datetime import datetime
 
-# Global variables to store data
-orders = {}  # Stores all orders
-tables = {}  # Stores all tables
-order_counter = 1000  # Starting order ID
+orders = {}  
+tables = {}  
+order_counter = 1000 #starting id rahhhh
+
 SAMPLE_MENU = [
     {'item_id': 1, 'item_name': 'Burger', 'quantity': 1, 'price': 150},
     {'item_id': 2, 'item_name': 'Fries', 'quantity': 1, 'price': 80},
@@ -15,7 +15,6 @@ SAMPLE_MENU = [
 
 def initialize_tables(num_tables=10):
     """
-    Initialize restaurant tables
     
     Args:
         num_tables: Number of tables in the restaurant (default: 10)
@@ -45,7 +44,6 @@ def create_order(customer_id, order_items, order_type, table_number=None):
     """
     global orders, order_counter
     
-    # Check if order type is valid
     if order_type not in ['Dine In', 'Takeout', 'Delivery']:
         print(f"Invalid order type. Must be Dine-in, Takeout, or Delivery")
         return None
@@ -83,7 +81,6 @@ def create_order(customer_id, order_items, order_type, table_number=None):
         'total_amount': total_amount
     }
     
-    # Assign table if dine-in
     if order_type == 'Dine In' and table_number:
         print(f"Attempting to assign table {table_number} to order {order_id}")
         print(f"Order type is: '{order_type}'")
