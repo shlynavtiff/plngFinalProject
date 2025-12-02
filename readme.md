@@ -6,8 +6,8 @@
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/YOUR-USERNAME/restaurant-rms.git
-cd restaurant-rms
+[git clone https://github.com/YOUR-USERNAME/restaurant-rms.git](https://github.com/shlynavtiff/plngFinalProject.git)
+cd plngFinalProject
 ```
 
 2. **Switch to YOUR assigned branch**
@@ -16,14 +16,15 @@ cd restaurant-rms
 git checkout your-module-name
 
 # Examples:
-# git checkout user-management
+# git checkout billing-and-payment
 # git checkout menu-management
-# git checkout billing-module
+# git checkout user-management
+# etc.........wasdasdawasd
 ```
 
 ---
 
-## 📝 How to Submit Your Work
+## How to Commit Your Work
 
 ### Step 1: Make sure you're on YOUR branch
 ```bash
@@ -33,11 +34,13 @@ git branch  # Should show * next to YOUR branch name
 ### Step 2: Add your module file
 ```bash
 # Add ONLY your file
-git add your_module.py
+git add your_module.py 
+git add . 
 
 # Example:
 # git add user_management.py
 # git add menu_management.py
+# git add . (lalagay lahat ng changes sa buong branch)
 ```
 
 ### Step 3: Commit with a clear message
@@ -47,6 +50,7 @@ git commit -m "Add [your module name] - [what you did]"
 # Examples:
 # git commit -m "Add user management - login and registration"
 # git commit -m "Add menu management - CRUD operations"
+# git commit -m "wasdasddasasdasdas"
 ```
 
 ### Step 4: Push to YOUR branch
@@ -56,17 +60,8 @@ git push origin your-branch-name
 # Examples:
 # git push origin user-management
 # git push origin menu-management
+# kung mali naman ng branch, magbabato naman yan ng error
 ```
-
-### Step 5: Create a Pull Request (on GitHub website)
-1. Go to the repository on GitHub
-2. Click "Pull requests" tab
-3. Click "New pull request"
-4. Select: `base: main` ← `compare: your-branch-name`
-5. Click "Create pull request"
-6. Add description of what you did
-7. Assign the project leader as reviewer
-8. Click "Create pull request"
 
 ---
 
@@ -82,7 +77,7 @@ git push origin your-branch-name
 - **NEVER** work on the `main` branch
 - **NEVER** touch other people's files
 - **NEVER** merge anything yourself
-- **NEVER** force push (`git push -f`)
+- **NEVER** force push (`git push -f`), wag, pls lang
 
 ---
 
@@ -124,37 +119,25 @@ git clone https://github.com/YOUR-USERNAME/restaurant-rms.git
 cd restaurant-rms
 git checkout your-branch-name
 ```
-
----
-
-## Module Assignments
-
-| Name | Branch | File |
-|------|--------|------|
-| Person 1 | `ordering-module` | `ordering_module.py` |
-| Person 2 | `user-management` | `user_management.py` |
-| Person 3 | `menu-management` | `menu_management.py` |
-| Person 4 | `billing-module` | `billing_module.py` |
-| Person 5 | `inventory-module` | `inventory_module.py` |
-| Person 6 | `reports-module` | `reports_module.py` |
-
 ---
 
 ## Quick Reference
 
 ```bash
 # 1. Clone (first time only)
-git clone https://github.com/YOUR-USERNAME/restaurant-rms.git
+https://github.com/shlynavtiff/plngFinalProject.git
 
 # 2. Go to your branch
 git checkout your-branch-name
+refer here
+<img width="353" height="441" alt="image" src="https://github.com/user-attachments/assets/1d19589b-a065-4417-8cb6-77db91a86c9e" />
+
 
 # 3. Do your work, then:
-git add your_file.py
+git add your_file.py or git add .
 git commit -m "Your message here"
 git push origin your-branch-name
 
-# 4. Create Pull Request on GitHub website
 ```
 
 ---
