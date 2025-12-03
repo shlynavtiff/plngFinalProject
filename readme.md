@@ -6,7 +6,7 @@
 
 1. **Clone the repository**
 ```bash
-[git clone https://github.com/YOUR-USERNAME/restaurant-rms.git](https://github.com/shlynavtiff/plngFinalProject.git)
+git clone https://github.com/shlynavtiff/plngFinalProject.git
 cd plngFinalProject
 ```
 
