@@ -1,0 +1,6 @@
+order_id,item_id,item_name,quantity,price
+1000,1,Burger,2,150.0
+1001,2,Fries,2,80.0
+1001,3,Coke,3,50.0
+1002,2,Fries,3,80.0
+1002,3,Coke,3,50.0
