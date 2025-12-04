@@ -130,7 +130,7 @@ def load_orders_from_csv(filename="orders.csv"):
                     "status": row["status"],
                     "order_time": row["order_time"],
                     "total_amount": float(row["total_amount"]),
-                    "order_items": [],  # Items loaded separately
+                    "order_items": [],
                 }
 
             order_counter = max_order_id + 1
@@ -214,9 +214,6 @@ def load_all_data():
     print("Data loaded!\n")
 
 
-# ==================== ORIGINAL FUNCTIONS ====================
-
-
 def initialize_tables(num_tables=10):
     global tables
     for i in range(1, num_tables + 1):
@@ -268,7 +265,7 @@ def create_order(customer_id, order_items, order_type, table_number=None):
         assign_table(table_number, order_id)
 
     print(f"Order {order_id} created successfully!")
-    save_all_data()  # AUTO-SAVE
+    save_all_data()
     return order_id
 
 
@@ -316,7 +313,7 @@ def cancel_order(order_id):
         tables[order["table_number"]]["order_id"] = None
 
     print(f"Order {order_id} cancelled successfully!")
-    save_all_data()  # AUTO-SAVE
+    save_all_data()
     return True
 
 
@@ -522,7 +519,7 @@ def interactive_test():
                 )
 
                 if order_id:
-                    print(f"\n✅ Order created! ID: {order_id}")
+                    print(f"\nOrder created! ID: {order_id}")
 
             except Exception as e:
                 print(f"Error creating order: {e}")
@@ -555,7 +552,7 @@ def interactive_test():
             load_all_data()
 
         elif choice == "6":
-            print("👋 Goodbye!")
+            print("Goodbye!")
             break
 
         else:
