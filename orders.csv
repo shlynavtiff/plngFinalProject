@@ -1,4 +1,4 @@
 order_id,customer_id,order_type,table_number,status,order_time,total_amount
-1000,was2,Dine In,2,Pending,2025-12-04 14:15:13,300.0
+1000,was2,Dine In,2,Completed,2025-12-04 14:15:13,300.0
 1001,wasd2,Delivery,,Completed,2025-12-04 14:30:47,310.0
-1002,wasd2,Dine In,10,Completed,2025-12-04 14:39:37,390
+1002,wasd2,Dine In,10,Completed,2025-12-04 14:39:37,390.0

@@ -1,6 +1,6 @@
 table_number,status,order_id,capacity
 1,Available,,4
-2,Occupied,1000,4
+2,Available,,4
 3,Available,,4
 4,Available,,4
 5,Available,,4
