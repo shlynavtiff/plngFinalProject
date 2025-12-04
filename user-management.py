@@ -1,599 +1,546 @@
-import datetime
-import string
+import csv
+import os
+from datetime import datetime
 
-ADMIN_PLAINTEXT_PW = "AdminPass123!"
-
-database = {
-    "admin": {
-        "password": "",
-        "role": "admin",
-        "activated": True,
-        "user_details": {
-            "name": "mcjabi",
-            "birth_date": "1990-01-01",
-            "phone": "8-7000",
-            "email": "mcjabe@gmail.com",
-        },
-    }
-}
+# Global variables
+users = {}
 current_user = None
-current_display = "main"
-is_running = True
-ROLES = ("admin", "cashier", "waiter", "customer")
+user_activity_log = []
+
+VALID_ROLES = ["Admin", "Cashier", "Waiter", "Customer"]
 
 
-def get_unique_username():
-    while True:
-        username = input("Enter Username: ")
-        if username in database:
-            print("Username already taken!")
-            continue
-        return username
+def save_users_to_csv(filename="users.csv"):
+    """Save all users to CSV file"""
+    try:
+        with open(filename, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(
+                ["username", "password", "role", "name", "contact", "status"]
+            )
 
-
-def get_confirmed_password(password, confirm):
-    _, is_valid_pw, _ = password_validation(password)
-    if not is_valid_pw:
-        return False
-
-    if password == confirm:
+            for username, user_info in users.items():
+                writer.writerow(
+                    [
+                        username,
+                        user_info["password"],
+                        user_info["role"],
+                        user_info["name"],
+                        user_info["contact"],
+                        user_info["status"],
+                    ]
+                )
         return True
-    else:
-        print("Password doesn't match!")
+    except Exception as e:
+        print(f"Error saving users: {e}")
         return False
 
 
-def get_validated_field(prompt, validator, error_msg="Validation Error: "):
-    while True:
-        value = input(prompt)
-        is_valid, message = validator(value)
-        if is_valid:
-            return value
-        print(f"{error_msg}{message}")
+def load_users_from_csv(filename="users.csv"):
+    """Load users from CSV file"""
+    global users
 
-
-def check_username_exists(username):
-    if username not in database:
-        print("Account doesn't exist!")
+    if not os.path.exists(filename):
+        print(f"{filename} not found. Creating default admin account.")
+        # Create default admin
+        users["admin"] = {
+            "username": "admin",
+            "password": "admin123",
+            "role": "Admin",
+            "name": "Administrator",
+            "contact": "N/A",
+            "status": "Active",
+        }
+        save_users_to_csv()
         return False
+
+    try:
+        with open(filename, "r") as file:
+            reader = csv.DictReader(file)
+            users = {}
+
+            for row in reader:
+                users[row["username"]] = {
+                    "username": row["username"],
+                    "password": row["password"],
+                    "role": row["role"],
+                    "name": row["name"],
+                    "contact": row["contact"],
+                    "status": row["status"],
+                }
+
+        print(f"Loaded {len(users)} users from {filename}")
+        return True
+    except Exception as e:
+        print(f"Error loading users: {e}")
+        return False
+
+
+def save_activity_log_to_csv(filename="user_activity.csv"):
+    """Save user activity log to CSV"""
+    try:
+        with open(filename, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["timestamp", "username", "action"])
+
+            for log in user_activity_log:
+                writer.writerow([log["timestamp"], log["username"], log["action"]])
+        return True
+    except Exception as e:
+        print(f"Error saving activity log: {e}")
+        return False
+
+
+def load_activity_log_from_csv(filename="user_activity.csv"):
+    """Load activity log from CSV"""
+    global user_activity_log
+
+    if not os.path.exists(filename):
+        return False
+
+    try:
+        with open(filename, "r") as file:
+            reader = csv.DictReader(file)
+            user_activity_log = []
+
+            for row in reader:
+                user_activity_log.append(
+                    {
+                        "timestamp": row["timestamp"],
+                        "username": row["username"],
+                        "action": row["action"],
+                    }
+                )
+
+        return True
+    except Exception as e:
+        print(f"Error loading activity log: {e}")
+        return False
+
+
+def register_user(username, password, role, name, contact):
+    """
+    Args:
+        username: Unique username
+        password: User password
+        role: User role (Admin, Cashier, Waiter, Customer)
+        name: Full name
+        contact: Contact number
+
+    """
+    global users
+
+    if not username or not password:
+        print("Username and password cannot be empty")
+        return False
+
+    if username in users:
+        print(f"Username '{username}' already exists")
+        return False
+
+    if role not in VALID_ROLES:
+        print(f"Invalid role. Must be: {', '.join(VALID_ROLES)}")
+        return False
+
+    users[username] = {
+        "username": username,
+        "password": password,
+        "role": role,
+        "name": name,
+        "contact": contact,
+        "status": "Active",
+    }
+
+    log_activity(username, f"User registered as {role}")
+    save_users_to_csv()
+    save_activity_log_to_csv()
+
+    print(f"User '{username}' registered successfully as {role}")
     return True
 
 
-def password_validation(password):
-    is_valid = True
-    messages = []
-    special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?/'\""
-
-    if len(password) < 8:
-        messages.append("Password must contain at least 8 characters.")
-        is_valid = False
-    if not any(char.isupper() for char in password):
-        messages.append("Password must contain at least 1 uppercase.")
-        is_valid = False
-    if not any(char.islower() for char in password):
-        messages.append("Password must contain at least 1 lowercase.")
-        is_valid = False
-    if not any(char.isdigit() for char in password):
-        messages.append("Password must contain at least 1 digit.")
-        is_valid = False
-    if not any(char in special_chars for char in password):
-        messages.append("Password must contain at least 1 special character.")
-        is_valid = False
-
-    if is_valid:
-        strength = "Strong Password!" if len(password) > 8 else "Normal Password."
-        return password, True, strength
-    else:
-        all_messages = messages + ["Weak Password!"]
-        return password, False, "\n".join(all_messages)
-
-
-def is_valid_birth_date(date_string, date_format="%Y-%m-%d"):
-    try:
-        birth_date = datetime.datetime.strptime(date_string, date_format).date()
-    except ValueError:
-        return False, "Invalid date format or value (e.g., non-existent date)."
-
-    if birth_date > datetime.date.today():
-        return False, "Birth date cannot be in the future."
-    return True, "Valid"
-
-
-def is_valid_contact(phone):
-    if len(phone) == 11 and phone.isdigit():
-        return True, "Valid"
-    return False, "Must be exactly 11 digits and contain only numbers."
-
-
-def is_valid_email(email):
-    if "@" in email and ".com" in email:
-        return True, "Valid"
-    return False, "Must contain '@' and '.com'"
-
-
-def display_user_details(username):
-    if username not in database:
-        print(f"Error: User '{username}' not found.")
-        return
-
-    user_data = database[username]
-    details = user_data["user_details"]
-
-    print("\n----- User Details -----")
-    print(f"Role: {user_data['role'].title()}")
-    print(f"Name: {details['name']}")
-    print(f"Birth Date: {details.get('birth_date', 'N/A')}")
-    print(f"Phone: {details['phone']}")
-    print(f"Email: {details['email']}")
-    print("------------------------")
-
-
-def register_account(
-    username, password, role, name, birth_date, phone, email, activated=True
-):
-    database[username] = {
-        "password": encrypt_password(password),
-        "role": role,
-        "activated": activated,
-        "user_details": {
-            "name": name,
-            "birth_date": birth_date,
-            "phone": phone,
-            "email": email,
-        },
-    }
-    print(f"Account {username} registered successfully!")
-    display_user_details(username)
-
-
 def login(username, password):
-    global current_user, current_display
-    if not check_username_exists(username):
-        return
-    if database[username]["password"] != encrypt_password(password):
-        return "Incorrect Password!"
-    if not database[username]["activated"]:
-        return "Account is not activated!"
+    global current_user
+
+    if username not in users:
+        print("Invalid username")
+        return False
+
+    user = users[username]
+
+    if user["status"] == "Inactive":
+        print("Account is deactivated. Contact admin.")
+        return False
+
+    if user["password"] != password:
+        print("Invalid password")
+        return False
+
     current_user = username
-    current_display = database[username]["role"]
-    display_user_details(current_user)
+    log_activity(username, "Logged in")
+    save_activity_log_to_csv()
+
+    print(f"Welcome, {user['name']}! ({user['role']})")
+    return True
 
 
 def logout():
-    global current_user, current_display
+    """Logout current user"""
+    global current_user
+
+    if current_user is None:
+        print("No user is logged in")
+        return False
+
+    log_activity(current_user, "Logged out")
+    save_activity_log_to_csv()
+
+    print(f"Goodbye, {users[current_user]['name']}!")
     current_user = None
-    current_display = "main"
-    print("Logged out successfully!")
+    return True
 
 
-def edit(username, key, value):
-    global current_user
-    if not check_username_exists(username):
-        return
-
-    if key == "username":
-        if username in database:
-            database[value] = database[username]
-            del database[username]
-            if current_user == username:
-                current_user = value
-    elif key == "password":
-        database[username][key] = encrypt_password(value)
-    elif key == "role" or key == "activated":
-        database[username][key] = value
-    elif key in database[username]["user_details"]:
-        database[username]["user_details"][key] = value
-
-    print(f"{key.title()} updated successfully!")
+def get_current_user():
+    """Get currently logged in user"""
+    return current_user
 
 
-def account_status(username, activate_status):
-    global current_user
-    if not check_username_exists(username):
-        return
-    action = "activated" if activate_status else "deactivated"
-    is_currently_active = database[username]["activated"]
-    if is_currently_active == activate_status:
-        print(f"Account {username} is already {action}.")
+def get_user_role(username):
+    """
+    Get role of a user
+
+    Args:
+        username: Username to check
+
+    Returns:
+        Role string or None if user doesn't exist
+    """
+    if username not in users:
+        return None
+    return users[username]["role"]
+
+
+def get_current_user_role():
+    """Get role of currently logged in user"""
+    if current_user is None:
+        return None
+    return users[current_user]["role"]
+
+
+def update_profile(username, new_data):
+    """
+    Update user profile
+
+    Args:
+        username: Username to update
+        new_data: Dictionary with fields to update (name, contact, password)
+
+    Returns:
+        True if successful, False if failed
+    """
+    global users
+
+    if username not in users:
+        print(f"User '{username}' not found")
+        return False
+
+    # Only current user or admin can update profiles
+    if current_user != username and get_current_user_role() != "Admin":
+        print("You don't have permission to update this profile")
+        return False
+
+    user = users[username]
+
+    if "name" in new_data:
+        user["name"] = new_data["name"]
+    if "contact" in new_data:
+        user["contact"] = new_data["contact"]
+    if "password" in new_data:
+        user["password"] = new_data["password"]
+
+    log_activity(current_user or "system", f"Updated profile for {username}")
+    save_users_to_csv()
+    save_activity_log_to_csv()
+
+    print(f"Profile updated for '{username}'")
+    return True
+
+
+def change_user_status(username, status):
+    """
+    Activate or deactivate user account (Admin only)
+
+    Args:
+        username: Username to modify
+        status: 'Active' or 'Inactive'
+
+    Returns:
+        True if successful, False if failed
+    """
+    global users
+
+    if get_current_user_role() != "Admin":
+        print("Only admins can change user status")
+        return False
+
+    if username not in users:
+        print(f"User '{username}' not found")
+        return False
+
+    if username == current_user:
+        print("You cannot deactivate your own account")
+        return False
+
+    if status not in ["Active", "Inactive"]:
+        print("Status must be 'Active' or 'Inactive'")
+        return False
+
+    users[username]["status"] = status
+
+    log_activity(current_user, f"Changed {username} status to {status}")
+    save_users_to_csv()
+    save_activity_log_to_csv()
+
+    print(f"User '{username}' is now {status}")
+    return True
+
+
+def change_user_role(username, new_role):
+    """
+    Change user role (Admin only)
+
+    Args:
+        username: Username to modify
+        new_role: New role
+
+    Returns:
+        True if successful, False if failed
+    """
+    global users
+
+    if get_current_user_role() != "Admin":
+        print("Only admins can change user roles")
+        return False
+
+    if username not in users:
+        print(f"User '{username}' not found")
+        return False
+
+    if new_role not in VALID_ROLES:
+        print(f"Invalid role. Must be: {', '.join(VALID_ROLES)}")
+        return False
+
+    old_role = users[username]["role"]
+    users[username]["role"] = new_role
+
+    log_activity(current_user, f"Changed {username} role from {old_role} to {new_role}")
+    save_users_to_csv()
+    save_activity_log_to_csv()
+
+    print(f"User '{username}' role changed from {old_role} to {new_role}")
+    return True
+
+
+def log_activity(username, action):
+    """Log user activity"""
+    global user_activity_log
+
+    user_activity_log.append(
+        {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "username": username,
+            "action": action,
+        }
+    )
+
+
+def display_all_users():
+    """Display all users"""
+    print("\n👥 ALL USERS")
+    print("=" * 80)
+    print(f"{'Username':<15} {'Name':<20} {'Role':<12} {'Contact':<15} {'Status':<10}")
+    print("=" * 80)
+
+    if not users:
+        print("No users found.")
     else:
-        edit(username, "activated", activate_status)
-        if not activate_status:
-            if username == current_user:
-                print(f"Deactivated user {username} was logged out.")
-                logout()
+        for username, user in users.items():
+            print(
+                f"{username:<15} {user['name']:<20} {user['role']:<12} {user['contact']:<15} {user['status']:<10}"
+            )
+
+    print("=" * 80)
 
 
-def encrypt_password(password):
-    CIPHER = (
-        list(string.ascii_lowercase)
-        + list(string.ascii_uppercase)
-        + list(string.punctuation)
-        + list(string.digits)
-        + [" "]
-    )
-    KEY = 5
-    L = len(CIPHER)
-    cipher_text = ""
-    for char in password:
-        try:
-            index = CIPHER.index(char)
-        except ValueError:
-            cipher_text += char
-            continue
-        new_index = (index - KEY) % L
-        cipher_text += CIPHER[new_index]
-    return cipher_text
+def display_activity_log(limit=10):
+    """Display recent user activity"""
+    print(f"\n📋 RECENT ACTIVITY (Last {limit})")
+    print("=" * 80)
+    print(f"{'Timestamp':<20} {'Username':<15} {'Action':<45}")
+    print("=" * 80)
+
+    if not user_activity_log:
+        print("No activity logged yet.")
+    else:
+        for log in user_activity_log[-limit:]:
+            print(f"{log['timestamp']:<20} {log['username']:<15} {log['action']:<45}")
+
+    print("=" * 80)
 
 
-def decrypt_password(password):
-    CIPHER = (
-        list(string.ascii_lowercase)
-        + list(string.ascii_uppercase)
-        + list(string.punctuation)
-        + list(string.digits)
-        + [" "]
-    )
-    KEY = 5
-    L = len(CIPHER)
-    plain_text = ""
-    for char in password:
-        try:
-            index = CIPHER.index(char)
-        except ValueError:
-            plain_text += char
-            continue
-        new_index = (index + KEY) % L
-        plain_text += CIPHER[new_index]
-    return plain_text
+def check_permission(required_role):
+    """
+    Check if current user has required role
+
+    Args:
+        required_role: Role required for action
+
+    Returns:
+        True if user has permission, False otherwise
+    """
+    if current_user is None:
+        print("You must be logged in")
+        return False
+
+    user_role = get_current_user_role()
+
+    if user_role != required_role and user_role != "Admin":
+        print(f"This action requires {required_role} role")
+        return False
+
+    return True
 
 
-def remove_account(username):
-    if check_username_exists(username):
-        if current_user == username:
-            logout()
-        del database[username]
-        print(f"Account {username} removed!")
+def interactive_test():
+    """Interactive testing menu"""
+    load_users_from_csv()
+    load_activity_log_from_csv()
 
-
-def display(screen_name):
-    print(f"\n===== {screen_name.replace('_', ' ').title()} =====")
-
-    if screen_name == "main":
-        print("1. Login \n2. Register \n3. Exit")
-    elif screen_name == "admin":
-        print(
-            "1. User Management \n2. Menu Management \n3. Inventory Management \n4. Reports and Analytics \n5. Logout"
-        )
-    elif screen_name == "user_management":
-        print(
-            "1. Add User \n2. Edit User \n3. Remove User \n4. Display Database \n5. Back"
-        )
-    elif screen_name == "edit":
-        print(
-            "1. Change Username \n2. Change Password \n3. Change User Type \n4. Activate User \n5. Deactivate User\n6. Back"
-        )
-    elif screen_name == "customer":
-        print("1. View Menu \n2. Order \n3. Logout")
-    elif screen_name == "cashier":
-        print("1. Process Billing \n2. View Transactions \n3. Logout")
-    elif screen_name == "waiter":
-        print(
-            "1. Place Order \n2. Assign Table \n3. Update Order Status \n4. Track Order Status \n5. View Order Summary\n6. Logout"
-        )
-    elif screen_name == "database":
-        print("--- All Registered Users ---")
-        for username in database.keys():
-            display_user_details(username)
-        print("----------------------------")
-    elif screen_name in [
-        "menu_management",
-        "inventory_management",
-        "reports_analytics",
-    ]:
-        pass
-
-
-def user_choice(screen_name):
-    global is_running, current_display
     while True:
-        choice = input("Enter Choice: ")
+        print("\n=== USER MANAGEMENT SYSTEM ===")
+        if current_user:
+            print(
+                f"Logged in as: {users[current_user]['name']} ({users[current_user]['role']})"
+            )
+        else:
+            print("Not logged in")
 
-        match screen_name:
-            case "main":
-                match choice:
-                    case "1":
-                        print("\n===== Login ====")
-                        login(input("Username: "), input("Password: "))
-                        break
-                    case "2":
-                        print("\n===== Register ====")
-                        username = get_unique_username()
+        print("\n1. Login")
+        print("2. Register New User")
+        print("3. Logout")
+        print("4. View All Users")
+        print("5. Update My Profile")
+        print("6. Change User Status (Admin)")
+        print("7. Change User Role (Admin)")
+        print("8. View Activity Log")
+        print("9. Exit")
+        print("\nAuto-save: ON")
 
-                        new_password = None
-                        while new_password is None:
-                            password_attempt = input("Enter Password: ")
-                            _, is_valid, msg = password_validation(password_attempt)
-                            if not is_valid:
-                                print(msg)
-                                continue
+        choice = input("\nEnter choice: ")
 
-                            confirmed_password_attempt = None
-                            for attempt_count in range(3):
-                                confirm_attempt = input("Confirm Password: ")
-                                if get_confirmed_password(
-                                    password_attempt, confirm_attempt
-                                ):
-                                    confirmed_password_attempt = password_attempt
-                                    break
-                                else:
-                                    print(
-                                        f"You have {2 - attempt_count} attempts left for confirmation!"
-                                    )
+        if choice == "1":
+            if current_user:
+                print("You are already logged in")
+                continue
 
-                            if confirmed_password_attempt:
-                                new_password = confirmed_password_attempt
-                                print(msg)
-                            else:
-                                print(
-                                    "Password confirmation failed. Please re-enter your password."
-                                )
+            username = input("Username: ")
+            password = input("Password: ")
+            login(username, password)
 
-                        name = input("Enter Name: ").title()
-                        birth_date = get_validated_field(
-                            "Enter Birth Date (YYYY-MM-DD): ", is_valid_birth_date
-                        )
-                        phone = get_validated_field("Enter Phone: ", is_valid_contact)
-                        email = get_validated_field("Enter Email: ", is_valid_email)
-                        register_account(
-                            username,
-                            new_password,
-                            "customer",
-                            name,
-                            birth_date,
-                            phone,
-                            email,
-                        )
-                        break
-                    case "3":
-                        is_running = False
-                        print("Exiting application...")
-                        break
-                    case _:
-                        print("Invalid choice. Please enter '1', '2', or '3'.")
-                        continue
+        elif choice == "2":
+            print("\n--- Register New User ---")
+            username = input("Username: ")
+            password = input("Password: ")
 
-            case "admin":
-                match choice:
-                    case "1":
-                        current_display = "user_management"
-                        break
-                    case "2":
-                        current_display = "menu_management"
-                        break
-                    case "3":
-                        current_display = "inventory_management"
-                        break
-                    case "4":
-                        current_display = "reports_analytics"
-                        break
-                    case "5":
-                        logout()
-                        break
-                    case _:
-                        print("Invalid choice. Please enter 1-5.")
-                        continue
+            print(f"\nRoles: {', '.join(VALID_ROLES)}")
+            role = input("Role: ").title()
 
-            case "user_management":
-                match choice:
-                    case "1":
-                        print("\n===== Register New User ====")
-                        username = get_unique_username()
+            name = input("Full Name: ")
+            contact = input("Contact Number: ")
 
-                        new_password = None
-                        while new_password is None:
-                            password_attempt = input("Enter Password: ")
-                            _, is_valid, msg = password_validation(password_attempt)
-                            if not is_valid:
-                                print(msg)
-                                continue
+            register_user(username, password, role, name, contact)
 
-                            confirmed_password_attempt = None
-                            for attempt_count in range(3):
-                                confirm_attempt = input("Confirm Password: ")
-                                if get_confirmed_password(
-                                    password_attempt, confirm_attempt
-                                ):
-                                    confirmed_password_attempt = password_attempt
-                                    break
-                                else:
-                                    print(
-                                        f"You have {2 - attempt_count} attempts left for confirmation!"
-                                    )
+        elif choice == "3":
+            logout()
 
-                            if confirmed_password_attempt:
-                                new_password = confirmed_password_attempt
-                                print(msg)
-                            else:
-                                print(
-                                    "Password confirmation failed. Please re-enter your password."
-                                )
+        elif choice == "4":
+            display_all_users()
 
-                        role = get_validated_field(
-                            f"Enter Type of User ({', '.join(ROLES)}): ",
-                            lambda r: (
-                                r.lower() in ROLES,
-                                f"Invalid User Type! Must be one of: {ROLES}",
-                            ),
-                        )
-                        name = input("Enter Name: ").title()
-                        birth_date = get_validated_field(
-                            "Enter Birth Date (YYYY-MM-DD): ", is_valid_birth_date
-                        )
-                        phone = get_validated_field("Enter Phone: ", is_valid_contact)
-                        email = get_validated_field("Enter Email: ", is_valid_email)
-                        register_account(
-                            username, new_password, role, name, birth_date, phone, email
-                        )
-                        break
-                    case "2":
-                        current_display = "edit"
-                        break
-                    case "3":
-                        print("\n===== Remove Account ====")
-                        remove_account(input("Enter Username: "))
-                        break
-                    case "4":
-                        display("database")
-                        continue
-                    case "5":
-                        current_display = "admin"
-                        break
-                    case _:
-                        print("Invalid choice. Please enter 1-5.")
-                        continue
+        elif choice == "5":
+            if not current_user:
+                print("Please login first")
+                continue
 
-            case "edit":
-                match choice:
-                    case "1":
-                        username = input("Username to change: ")
-                        if not check_username_exists(username):
-                            continue
-                        new_username = get_unique_username()
-                        edit(username, "username", new_username)
-                        break
-                    case "2":
-                        username = input("Username to change password: ")
-                        if not check_username_exists(username):
-                            continue
-                        while True:
-                            current_pw_attempt = input("Enter CURRENT Password: ")
-                            if database[username]["password"] == encrypt_password(
-                                current_pw_attempt
-                            ):
-                                break
-                            else:
-                                print("Invalid password")
-                                continue
-                        new_password = None
-                        while new_password is None:
-                            password_attempt = input("Enter NEW Password: ")
-                            _, is_valid, msg = password_validation(password_attempt)
-                            if not is_valid:
-                                print(msg)
-                                continue
-                            confirmed_password_attempt = None
-                            for attempt_count in range(3):
-                                confirm_attempt = input("Confirm NEW Password: ")
-                                if get_confirmed_password(
-                                    password_attempt, confirm_attempt
-                                ):
-                                    confirmed_password_attempt = password_attempt
-                                    break
-                                else:
-                                    print(
-                                        f"You have {2 - attempt_count} attempts left for confirmation!"
-                                    )
-                            if confirmed_password_attempt:
-                                new_password = confirmed_password_attempt
-                                print(msg)
-                            else:
-                                print(
-                                    "New password confirmation failed. Returning to edit menu."
-                                )
-                                break
-                        if new_password:
-                            edit(username, "password", new_password)
-                        break
-                    case "3":
-                        username = input("Username to change role: ")
-                        if not check_username_exists(username):
-                            continue
-                        role = get_validated_field(
-                            f"New Role ({', '.join(ROLES)}): ",
-                            lambda r: (r.lower() in ROLES, "Invalid Role!"),
-                        )
-                        edit(username, "role", role.lower())
-                        break
-                    case "4":
-                        print("\n===== Activate Account ====")
-                        username = input("Username to activate: ")
-                        account_status(username, True)
-                        break
-                    case "5":
-                        print("\n===== Deactivate Account ====")
-                        username = input("Username to deactivate: ")
-                        account_status(username, False)
-                        break
-                    case "6":
-                        current_display = "admin"
-                        break
-                    case _:
-                        print("Invalid choice. Please enter 1-6.")
-                        continue
+            print("\n--- Update Profile ---")
+            print("Leave blank to keep current value")
 
-            case "menu_management":
-                pass
+            new_data = {}
+            name = input(f"New Name (current: {users[current_user]['name']}): ")
+            if name:
+                new_data["name"] = name
 
-            case "inventory_management":
-                pass
+            contact = input(
+                f"New Contact (current: {users[current_user]['contact']}): "
+            )
+            if contact:
+                new_data["contact"] = contact
 
-            case "reports_analytics":
-                pass
+            password = input("New Password (leave blank to keep): ")
+            if password:
+                new_data["password"] = password
 
-            case "customer":
-                match choice:
-                    case "1":
-                        pass
-                    case "2":
-                        pass
-                    case "3":
-                        logout()
-                        break
-                    case _:
-                        print("Invalid choice")
+            if new_data:
+                update_profile(current_user, new_data)
+            else:
+                print("⚠️ No changes made")
 
-            case "cashier":
-                match choice:
-                    case "1":
-                        pass
-                    case "2":
-                        pass
-                    case "3":
-                        logout()
-                        break
-                    case _:
-                        print("Invalid choice")
+        elif choice == "6":
+            if not current_user:
+                print("Please login first")
+                continue
 
-            case "waiter":
-                match choice:
-                    case "1":
-                        pass
-                    case "2":
-                        pass
-                    case "3":
-                        pass
-                    case "4":
-                        pass
-                    case "5":
-                        pass
-                    case "6":
-                        logout()
-                        break
-                    case _:
-                        print("Invalid choice")
+            if get_current_user_role() != "Admin":
+                print("Only admins can change user status")
+                continue
 
-            case _:
-                logout()
-                break
+            display_all_users()
+            username = input("\nUsername to modify: ")
+            status = input("New status (Active/Inactive): ").title()
+
+            change_user_status(username, status)
+
+        elif choice == "7":
+            if not current_user:
+                print("Please login first")
+                continue
+
+            if get_current_user_role() != "Admin":
+                print("Only admins can change user roles")
+                continue
+
+            display_all_users()
+            username = input("\nUsername to modify: ")
+            print(f"Roles: {', '.join(VALID_ROLES)}")
+            new_role = input("New role: ").title()
+
+            change_user_role(username, new_role)
+
+        elif choice == "8":
+            try:
+                limit = int(
+                    input("How many recent activities to show? (default 10): ") or "10"
+                )
+                display_activity_log(limit)
+            except ValueError:
+                print("Invalid number")
+
+        elif choice == "9":
+            print("Goodbye!")
+            break
+
+        else:
+            print("Invalid choice! Please select 1-9.")
 
 
-def screen(screen_name):
-    display(screen_name)
-    user_choice(screen_name)
-
-
-if database["admin"]["password"] == "":
-    database["admin"]["password"] = encrypt_password(ADMIN_PLAINTEXT_PW)
-
-while is_running:
-    screen(current_display)
+if __name__ == "__main__":
+    interactive_test()
