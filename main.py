@@ -1,821 +1,803 @@
-# main.py - Restaurant Management System
-# Complete Integration of All Modules
+"""
+🍽 Restaurant Management System - Main Integration
+Connects all 6 modules into one complete system
+"""
 
-import user_management as um
-import menu_management as menu
-import inventory_management as inv
-import ordering_table_management as order
-import billing_payment as billing
-import reports_analytics as reports
-import os
+# Import all modules
+try:
+    import user_management as um
+    import menu_management as menu
+    import inventory_management as inv
+    import ordering_table_management as order
+    import billing_and_payment as billing
+    import reports_and_analytics as reports
+except ImportError as e:
+    print(f"Error importing modules: {e}")
+    print("Make sure all module files are in the same directory!")
+    exit(1)
 
-def clear_screen():
-    """Clear console screen"""
-    os.system('cls' if os.name == 'nt' else 'clear')
+from datetime import datetime
 
-def press_enter():
-    """Wait for user to press enter"""
-    input("\nPress Enter to continue...")
 
-def main_menu():
-    """Main entry point - Login first"""
-    
+def main():
+    """Main entry point - Login screen"""
+
+    # Load all data on startup
+    print("RESTAURANT MANAGEMENT SYSTEM")
+    print("Loading system data...")
+
+    um.load_users_from_csv()
+    um.load_activity_log_from_csv()
+    menu.load_menu_from_csv()
+    inv.load_inventory_from_csv()
+    inv.load_usage_log_from_csv()
+    order.load_all_data()
+    billing.load_transactions_from_csv()
+
+    print("System ready!\n")
+
     while True:
-        clear_screen()
-        print("\n" + "="*60)
-        print("🍽️  RESTAURANT MANAGEMENT SYSTEM")
-        print("="*60)
-        print("\n1. Login")
-        print("2. Exit System")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            clear_screen()
-            print("\n" + "="*60)
-            print("🔐 LOGIN")
-            print("="*60)
-            username = input("\nUsername: ").strip()
-            password = input("Password: ").strip()
-            
+        print("\n" + "=" * 60)
+        print("🍽️ RESTAURANT MANAGEMENT SYSTEM - LOGIN")
+        print("=" * 60)
+        print("1. Login")
+        print("2. Register (Customer)")
+        print("3. Exit")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            username = input("\nUsername: ")
+            password = input("Password: ")
+
             if um.login(username, password):
-                print(f"\n✅ Login successful! Welcome {username}")
-                press_enter()
-                
-                # Get role and redirect to appropriate menu
                 role = um.get_current_user_role()
-                
-                if role == 'Admin':
+
+                # Route to appropriate menu based on role
+                if role == "Admin":
                     admin_menu()
-                elif role == 'Cashier':
+                elif role == "Cashier":
                     cashier_menu()
-                elif role == 'Waiter':
+                elif role == "Waiter":
                     waiter_menu()
-                elif role == 'Customer':
+                elif role == "Customer":
                     customer_menu()
-            else:
-                print("\n❌ Invalid credentials!")
-                press_enter()
-        
-        elif choice == '2':
-            clear_screen()
-            print("\n👋 Thank you for using Restaurant Management System!")
-            print("Goodbye!\n")
+                else:
+                    print("Unknown role")
+
+        elif choice == "2":
+            register_customer()
+
+        elif choice == "3":
+            print("\nThank you for using our system!")
             break
+
         else:
-            print("\n❌ Invalid choice!")
-            press_enter()
+            print("Invalid choice!")
 
 
-# ========================== ADMIN MENU ==========================
+def register_customer():
+    """Quick customer registration"""
+    print("\n--- Customer Registration ---")
+    username = input("Username: ")
+    password = input("Password: ")
+    name = input("Full Name: ")
+    contact = input("Contact Number: ")
+
+    um.register_user(username, password, "Customer", name, contact)
+
 
 def admin_menu():
-    """Full access to all system features"""
-    
+    """Admin has full access to all modules"""
+
     while um.get_current_user():
-        clear_screen()
-        current_user = um.get_current_user()
-        print("\n" + "="*60)
-        print(f"👑 ADMIN MENU - Logged in as: {current_user}")
-        print("="*60)
+        print("\n" + "=" * 60)
+        print("ADMIN DASHBOARD")
+        print("=" * 60)
+        print(f"Logged in as: {um.users[um.get_current_user()]['name']}")
         print("\n1. User Management")
         print("2. Menu Management")
         print("3. Inventory Management")
         print("4. Ordering & Table Management")
         print("5. Billing & Payment")
         print("6. Reports & Analytics")
-        print("7. Logout")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
+        print("7. Quick Stats Dashboard")
+        print("8. Logout")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
             admin_user_management()
-        elif choice == '2':
+        elif choice == "2":
             admin_menu_management()
-        elif choice == '3':
+        elif choice == "3":
             admin_inventory_management()
-        elif choice == '4':
+        elif choice == "4":
             admin_ordering_management()
-        elif choice == '5':
+        elif choice == "5":
             admin_billing_management()
-        elif choice == '6':
+        elif choice == "6":
             admin_reports_analytics()
-        elif choice == '7':
+        elif choice == "7":
+            show_quick_dashboard()
+        elif choice == "8":
             um.logout()
-            print("\n✅ Logged out successfully!")
-            press_enter()
             break
         else:
-            print("\n❌ Invalid choice!")
-            press_enter()
+            print("Invalid choice!")
 
 
 def admin_user_management():
-    """Admin - User Management Sub-menu"""
-    
+    """User management submenu"""
     while True:
-        clear_screen()
-        print("\n" + "="*60)
-        print("👥 USER MANAGEMENT")
-        print("="*60)
-        print("\n1. Add New User")
-        print("2. View All Users")
-        print("3. Update User")
-        print("4. Delete User")
-        print("5. Back to Main Menu")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            print("\n--- Add New User ---")
-            username = input("Username: ").strip()
-            password = input("Password: ").strip()
-            print("Roles: Admin, Cashier, Waiter, Customer")
-            role = input("Role: ").strip()
-            
-            if um.add_user(username, password, role):
-                print(f"\n✅ User '{username}' added successfully!")
-            else:
-                print("\n❌ Failed to add user!")
-            press_enter()
-            
-        elif choice == '2':
-            print("\n--- All Users ---")
-            um.view_users()
-            press_enter()
-            
-        elif choice == '3':
-            print("\n--- Update User ---")
-            user_id = input("User ID to update: ").strip()
-            print("Leave blank to keep current value")
-            new_username = input("New Username: ").strip() or None
-            new_password = input("New Password: ").strip() or None
-            new_role = input("New Role: ").strip() or None
-            
-            if um.update_user(user_id, new_username, new_password, new_role):
-                print(f"\n✅ User ID {user_id} updated!")
-            else:
-                print("\n❌ Failed to update user!")
-            press_enter()
-            
-        elif choice == '4':
-            print("\n--- Delete User ---")
-            user_id = input("User ID to delete: ").strip()
-            confirm = input(f"Delete user ID {user_id}? (yes/no): ").strip().lower()
-            
-            if confirm == 'yes':
-                if um.delete_user(user_id):
-                    print(f"\n✅ User ID {user_id} deleted!")
-                else:
-                    print("\n❌ Failed to delete user!")
-            press_enter()
-            
-        elif choice == '5':
+        print("\n--- USER MANAGEMENT ---")
+        print("1. View All Users")
+        print("2. Register New User")
+        print("3. Change User Role")
+        print("4. Activate/Deactivate User")
+        print("5. View Activity Log")
+        print("6. Back")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            um.display_all_users()
+        elif choice == "2":
+            username = input("Username: ")
+            password = input("Password: ")
+            print(f"Roles: {', '.join(um.VALID_ROLES)}")
+            role = input("Role: ").title()
+            name = input("Full Name: ")
+            contact = input("Contact: ")
+            um.register_user(username, password, role, name, contact)
+        elif choice == "3":
+            um.display_all_users()
+            username = input("Username to modify: ")
+            print(f"Roles: {', '.join(um.VALID_ROLES)}")
+            new_role = input("New role: ").title()
+            um.change_user_role(username, new_role)
+        elif choice == "4":
+            um.display_all_users()
+            username = input("Username to modify: ")
+            status = input("Status (Active/Inactive): ").title()
+            um.change_user_status(username, status)
+        elif choice == "5":
+            limit = int(input("How many recent activities? (default 20): ") or "20")
+            um.display_activity_log(limit)
+        elif choice == "6":
             break
-        else:
-            print("\n❌ Invalid choice!")
-            press_enter()
 
 
 def admin_menu_management():
-    """Admin - Menu Management Sub-menu"""
-    
+    """Menu management submenu"""
     while True:
-        clear_screen()
-        print("\n" + "="*60)
-        print("📋 MENU MANAGEMENT")
-        print("="*60)
-        print("\n1. Add Menu Item")
-        print("2. View All Menu Items")
+        print("\n--- MENU MANAGEMENT ---")
+        print("1. View All Menu Items")
+        print("2. Add Menu Item")
         print("3. Update Menu Item")
         print("4. Delete Menu Item")
-        print("5. Toggle Item Availability")
-        print("6. Back to Main Menu")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            print("\n--- Add Menu Item ---")
-            name = input("Item Name: ").strip()
-            category = input("Category: ").strip()
-            price = float(input("Price: ").strip())
-            description = input("Description: ").strip()
-            
-            if menu.add_menu_item(name, category, price, description):
-                print(f"\n✅ '{name}' added to menu!")
-            else:
-                print("\n❌ Failed to add item!")
-            press_enter()
-            
-        elif choice == '2':
-            print("\n--- Menu Items ---")
-            menu.view_menu()
-            press_enter()
-            
-        elif choice == '3':
-            print("\n--- Update Menu Item ---")
-            item_id = input("Item ID to update: ").strip()
-            print("Leave blank to keep current value")
-            new_name = input("New Name: ").strip() or None
-            new_category = input("New Category: ").strip() or None
-            new_price = input("New Price: ").strip()
-            new_price = float(new_price) if new_price else None
-            new_desc = input("New Description: ").strip() or None
-            
-            if menu.update_menu_item(item_id, new_name, new_category, new_price, new_desc):
-                print(f"\n✅ Item ID {item_id} updated!")
-            else:
-                print("\n❌ Failed to update item!")
-            press_enter()
-            
-        elif choice == '4':
-            print("\n--- Delete Menu Item ---")
-            item_id = input("Item ID to delete: ").strip()
-            confirm = input(f"Delete item ID {item_id}? (yes/no): ").strip().lower()
-            
-            if confirm == 'yes':
-                if menu.delete_menu_item(item_id):
-                    print(f"\n✅ Item ID {item_id} deleted!")
+        print("5. Change Item Status")
+        print("6. View by Category")
+        print("7. Back")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            menu.display_menu()
+        elif choice == "2":
+            item_name = input("Item Name: ")
+            print(f"Categories: {', '.join(menu.VALID_CATEGORIES)}")
+            category = input("Category: ").title()
+            try:
+                price = float(input("Price (₱): "))
+                prep_time = int(input("Prep Time (minutes): ") or "10")
+            except ValueError:
+                print("Invalid input")
+                continue
+            description = input("Description: ")
+            menu.add_menu_item(item_name, category, price, prep_time, description)
+        elif choice == "3":
+            menu.display_menu()
+            try:
+                item_id = int(input("Item ID to update: "))
+                if item_id in menu.menu_items:
+                    item = menu.menu_items[item_id]
+                    new_details = {}
+
+                    name = input(
+                        f"Name (current: {item['item_name']}, blank to skip): "
+                    )
+                    if name:
+                        new_details["item_name"] = name
+
+                    price = input(f"Price (current: {item['price']}, blank to skip): ")
+                    if price:
+                        new_details["price"] = float(price)
+
+                    if new_details:
+                        menu.update_menu_item(item_id, new_details)
                 else:
-                    print("\n❌ Failed to delete item!")
-            press_enter()
-            
-        elif choice == '5':
-            print("\n--- Toggle Availability ---")
-            item_id = input("Item ID: ").strip()
-            available = input("Available? (yes/no): ").strip().lower() == 'yes'
-            
-            if menu.toggle_availability(item_id, available):
-                status = "Available" if available else "Unavailable"
-                print(f"\n✅ Item ID {item_id} is now {status}!")
-            else:
-                print("\n❌ Failed to update availability!")
-            press_enter()
-            
-        elif choice == '6':
+                    print("Item not found")
+            except ValueError:
+                print("Invalid input")
+        elif choice == "4":
+            menu.display_menu()
+            try:
+                item_id = int(input("Item ID to delete: "))
+                confirm = input("Confirm deletion? (yes/no): ")
+                if confirm.lower() == "yes":
+                    menu.delete_menu_item(item_id)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "5":
+            menu.display_menu()
+            try:
+                item_id = int(input("Item ID: "))
+                print(f"Status: {', '.join(menu.VALID_STATUS)}")
+                status = input("New Status: ").title()
+                menu.set_item_status(item_id, status)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "6":
+            print(f"Categories: {', '.join(menu.VALID_CATEGORIES)}")
+            category = input("Category: ").title()
+            items = menu.get_menu_by_category(category)
+            menu.display_menu(items)
+        elif choice == "7":
             break
-        else:
-            print("\n❌ Invalid choice!")
-            press_enter()
 
 
 def admin_inventory_management():
-    """Admin - Inventory Management Sub-menu"""
-    
+    """Inventory management submenu"""
     while True:
-        clear_screen()
-        print("\n" + "="*60)
-        print("📦 INVENTORY MANAGEMENT")
-        print("="*60)
-        print("\n1. Add Inventory Item")
-        print("2. View All Inventory")
-        print("3. Update Stock")
-        print("4. View Low Stock Items")
-        print("5. Back to Main Menu")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            print("\n--- Add Inventory Item ---")
-            name = input("Item Name: ").strip()
-            quantity = float(input("Quantity: ").strip())
-            unit = input("Unit (kg, pcs, L, etc.): ").strip()
-            reorder_level = float(input("Reorder Level: ").strip())
-            
-            if inv.add_inventory_item(name, quantity, unit, reorder_level):
-                print(f"\n✅ '{name}' added to inventory!")
-            else:
-                print("\n❌ Failed to add item!")
-            press_enter()
-            
-        elif choice == '2':
-            print("\n--- Current Inventory ---")
-            inv.view_inventory()
-            press_enter()
-            
-        elif choice == '3':
-            print("\n--- Update Stock ---")
-            item_name = input("Item Name: ").strip()
-            quantity = float(input("Quantity to add: ").strip())
-            reason = input("Reason: ").strip()
-            
-            if inv.add_stock(item_name, quantity, reason):
-                print(f"\n✅ Stock updated for '{item_name}'!")
-            else:
-                print("\n❌ Failed to update stock!")
-            press_enter()
-            
-        elif choice == '4':
-            print("\n--- Low Stock Alert ---")
-            inv.check_low_stock()
-            press_enter()
-            
-        elif choice == '5':
+        print("\n--- INVENTORY MANAGEMENT ---")
+        print("1. View All Inventory")
+        print("2. Add New Stock Item")
+        print("3. Update Stock Quantity")
+        print("4. Check Low Stock Alerts")
+        print("5. Check Expiring Items")
+        print("6. View Usage Log")
+        print("7. Generate Inventory Report")
+        print("8. Back")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            inv.display_inventory()
+        elif choice == "2":
+            item_name = input("Item Name: ")
+            try:
+                quantity = float(input("Quantity: "))
+            except ValueError:
+                print("Invalid quantity")
+                continue
+            print(f"Units: {', '.join(inv.UNITS)}")
+            unit = input("Unit: ").lower()
+            supplier = input("Supplier: ")
+            exp_date = input("Expiration Date (YYYY-MM-DD, blank to skip): ")
+            try:
+                reorder = float(input("Reorder Level (default 10): ") or "10")
+            except ValueError:
+                reorder = 10
+            inv.add_stock(
+                item_name, quantity, unit, supplier, exp_date or None, reorder
+            )
+        elif choice == "3":
+            inv.display_inventory()
+            item_name = input("Item Name: ")
+            try:
+                change = float(input("Quantity to add (+) or deduct (-): "))
+                reason = input("Reason: ")
+                inv.update_stock(item_name, change, reason)
+            except ValueError:
+                print("Invalid quantity")
+        elif choice == "4":
+            low_stock = inv.check_reorder_level()
+            print(f"\nLOW STOCK ALERTS ({len(low_stock)} items)")
+            for item in low_stock.values():
+                print(f"  {item['item_name']}: {item['quantity']} {item['unit']}")
+        elif choice == "5":
+            try:
+                days = int(input("Days ahead to check (default 7): ") or "7")
+                expiring = inv.check_expiring_soon(days)
+                print(f"\nEXPIRING IN {days} DAYS ({len(expiring)} items)")
+                for item in expiring.values():
+                    print(f"  {item['item_name']}: {item['expiration_date']}")
+            except ValueError:
+                print("Invalid input")
+        elif choice == "6":
+            try:
+                limit = int(input("Recent entries (default 20): ") or "20")
+                inv.display_usage_log(limit)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "7":
+            inv.generate_inventory_report()
+        elif choice == "8":
             break
-        else:
-            print("\n❌ Invalid choice!")
-            press_enter()
 
 
 def admin_ordering_management():
-    """Admin - View and manage orders"""
-    
+    """Ordering management submenu"""
     while True:
-        clear_screen()
-        print("\n" + "="*60)
-        print("🍴 ORDER & TABLE MANAGEMENT")
-        print("="*60)
-        print("\n1. View All Orders")
-        print("2. View Order Details")
-        print("3. Update Order Status")
-        print("4. View Table Status")
-        print("5. Back to Main Menu")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            print("\n--- All Orders ---")
-            order.view_all_orders()
-            press_enter()
-            
-        elif choice == '2':
-            order_id = input("\nOrder ID: ").strip()
-            order.view_order_details(order_id)
-            press_enter()
-            
-        elif choice == '3':
-            order_id = input("\nOrder ID: ").strip()
-            print("Status options: Pending, Preparing, Ready, Completed, Cancelled")
-            status = input("New Status: ").strip()
-            
-            if order.update_order_status(order_id, status):
-                print(f"\nOrder {order_id} status updated to '{status}'!")
-            else:
-                print("\nFailed to update status!")
-            press_enter()
-            
-        elif choice == '4':
-            print("\n--- Table Status ---")
-            order.view_table_status()
-            press_enter()
-            
-        elif choice == '5':
+        print("\n--- ORDERING & TABLE MANAGEMENT ---")
+        print("1. View All Tables")
+        print("2. View All Orders")
+        print("3. Create New Order")
+        print("4. Update Order Status")
+        print("5. View Order Details")
+        print("6. Cancel Order")
+        print("7. Back")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            order.display_all_tables()
+        elif choice == "2":
+            order.display_all_orders()
+        elif choice == "3":
+            create_order_interactive()
+        elif choice == "4":
+            order.display_all_orders()
+            try:
+                order_id = int(input("Order ID: "))
+                print(
+                    "Status options: Pending, In Progress, Served, Completed, Cancelled"
+                )
+                status = input("New Status: ").title()
+                order.update_order_status(order_id, status)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "5":
+            try:
+                order_id = int(input("Order ID: "))
+                summary = order.get_order_summary(order_id)
+                if summary:
+                    print(summary)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "6":
+            order.display_all_orders()
+            try:
+                order_id = int(input("Order ID to cancel: "))
+                confirm = input("Confirm cancellation? (yes/no): ")
+                if confirm.lower() == "yes":
+                    order.cancel_order(order_id)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "7":
             break
-        else:
-            print("\nInvalid choice!")
-            press_enter()
 
 
 def admin_billing_management():
-    """Admin - View billing and transactions"""
-    
+    """Billing management submenu"""
     while True:
-        clear_screen()
-        print("\n" + "="*60)
-        print("BILLING & PAYMENT")
-        print("="*60)
-        print("\n1. View All Transactions")
-        print("2. View Transaction Details")
-        print("3. Search Transaction")
-        print("4. Back to Main Menu")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            print("\n--- All Transactions ---")
-            billing.view_all_transactions()
-            press_enter()
-            
-        elif choice == '2':
-            trans_id = input("\nTransaction ID: ").strip()
-            billing.view_transaction_details(trans_id)
-            press_enter()
-            
-        elif choice == '3':
-            search = input("\nSearch (order ID, customer, cashier): ").strip()
-            billing.search_transactions(search)
-            press_enter()
-            
-        elif choice == '4':
+        print("\n--- BILLING & PAYMENT ---")
+        print("1. Process Payment")
+        print("2. View Transaction")
+        print("3. View All Transactions")
+        print("4. View Daily Sales")
+        print("5. Generate Receipt")
+        print("6. View Discount Codes")
+        print("7. Back")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            process_payment_interactive()
+        elif choice == "2":
+            try:
+                trans_id = int(input("Transaction ID: "))
+                trans = billing.get_transaction(trans_id)
+                if trans:
+                    for key, value in trans.items():
+                        print(f"{key}: {value}")
+            except ValueError:
+                print("Invalid input")
+        elif choice == "3":
+            billing.display_all_transactions()
+        elif choice == "4":
+            date = input("Date (YYYY-MM-DD, blank for today): ")
+            sales = billing.get_daily_sales(date if date else None)
+            print(f"\nSALES - {sales['date']}")
+            print(f"Total: ₱{sales['total_sales']:,.2f}")
+            print(f"Transactions: {sales['transaction_count']}")
+        elif choice == "5":
+            try:
+                trans_id = int(input("Transaction ID: "))
+                receipt = billing.generate_receipt(trans_id)
+                if receipt:
+                    print(receipt)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "6":
+            billing.display_discount_codes()
+        elif choice == "7":
             break
-        else:
-            print("\nInvalid choice!")
-            press_enter()
 
 
 def admin_reports_analytics():
-    """Admin - Reports and Analytics"""
-    
+    """Reports submenu"""
     while True:
-        clear_screen()
-        print("\n" + "="*60)
-        print("REPORTS & ANALYTICS")
-        print("="*60)
-        print("\n1. Daily Sales Report")
-        print("2. Sales by Period")
-        print("3. Best Selling Items")
-        print("4. Revenue by Category")
-        print("5. Inventory Usage Report")
-        print("6. Back to Main Menu")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            date = input("\nDate (YYYY-MM-DD) or press Enter for today: ").strip()
-            if not date:
-                from datetime import date as dt
-                date = str(dt.today())
-            reports.daily_sales_report(date)
-            press_enter()
-            
-        elif choice == '2':
-            start = input("Start Date (YYYY-MM-DD): ").strip()
-            end = input("End Date (YYYY-MM-DD): ").strip()
-            reports.generate_sales_report(start, end)
-            press_enter()
-            
-        elif choice == '3':
-            print("\n--- Best Selling Items ---")
-            reports.get_best_selling_items()
-            press_enter()
-            
-        elif choice == '4':
-            print("\n--- Revenue by Category ---")
-            reports.revenue_by_category()
-            press_enter()
-            
-        elif choice == '5':
-            print("\n--- Inventory Usage ---")
-            reports.inventory_usage_report()
-            press_enter()
-            
-        elif choice == '6':
+        print("\n--- REPORTS & ANALYTICS ---")
+        print("1. Sales Report (Custom Range)")
+        print("2. Daily Sales")
+        print("3. Weekly Sales")
+        print("4. Monthly Sales")
+        print("5. Best-Selling Items")
+        print("6. Inventory Summary")
+        print("7. User Activity Summary")
+        print("8. Revenue Breakdown")
+        print("9. Back")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            start = input("Start date (YYYY-MM-DD): ")
+            end = input("End date (YYYY-MM-DD): ")
+            report = reports.generate_sales_report(start, end)
+            if report:
+                reports.display_sales_report(report)
+        elif choice == "2":
+            today = datetime.now().strftime("%Y-%m-%d")
+            report = reports.generate_sales_report(today, today)
+            if report:
+                reports.display_sales_report(report)
+        elif choice == "3":
+            from datetime import timedelta
+
+            today = datetime.now()
+            week_ago = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+            report = reports.generate_sales_report(week_ago, today.strftime("%Y-%m-%d"))
+            if report:
+                reports.display_sales_report(report)
+        elif choice == "4":
+            from datetime import timedelta
+
+            today = datetime.now()
+            month_ago = (today - timedelta(days=30)).strftime("%Y-%m-%d")
+            report = reports.generate_sales_report(
+                month_ago, today.strftime("%Y-%m-%d")
+            )
+            if report:
+                reports.display_sales_report(report)
+        elif choice == "5":
+            best = reports.get_best_selling_items(limit=10)
+            reports.display_best_sellers(best)
+        elif choice == "6":
+            summary = reports.generate_inventory_summary()
+            reports.display_inventory_summary(summary)
+        elif choice == "7":
+            summary = reports.get_user_activity_summary()
+            reports.display_user_activity(summary)
+        elif choice == "8":
+            breakdown = reports.generate_revenue_breakdown()
+            if breakdown:
+                print(f"\nREVENUE BREAKDOWN")
+                for key, value in breakdown.items():
+                    print(f"{key}: ₱{value:,.2f}")
+        elif choice == "9":
             break
-        else:
-            print("\nInvalid choice!")
-            press_enter()
+
+
+def show_quick_dashboard():
+    """Quick overview dashboard"""
+    print("\n" + "=" * 60)
+    print("QUICK DASHBOARD")
+    print("=" * 60)
+
+    # Today's sales
+    today = datetime.now().strftime("%Y-%m-%d")
+    sales = billing.get_daily_sales(today)
+    print(f"\nToday's Sales: ₱{sales['total_sales']:,.2f}")
+    print(f"   Transactions: {sales['transaction_count']}")
+
+    # Low stock alerts
+    low_stock = inv.check_reorder_level()
+    print(f"\nLow Stock Items: {len(low_stock)}")
+
+    # Available tables
+    available_tables = sum(
+        1 for t in order.tables.values() if t["status"] == "Available"
+    )
+    print(f"\n🪑 Available Tables: {available_tables}/{len(order.tables)}")
+
+    # Pending orders
+    pending = order.get_all_orders("Pending")
+    print(f"\n📋 Pending Orders: {len(pending)}")
+
+    print("=" * 60)
+
 
 def cashier_menu():
-    """Cashier access - Billing and order viewing"""
-    
+    """Cashier access - billing and viewing orders"""
+
     while um.get_current_user():
-        clear_screen()
-        current_user = um.get_current_user()
-        print("\n" + "="*60)
-        print(f"💵 CASHIER MENU - Logged in as: {current_user}")
-        print("="*60)
-        print("\n1. View Orders (Pending Payment)")
+        print("\n" + "=" * 60)
+        print("CASHIER DASHBOARD")
+        print("=" * 60)
+        print(f"Logged in as: {um.users[um.get_current_user()]['name']}")
+        print("\n1. View Pending Orders")
         print("2. Process Payment")
-        print("3. View Transactions")
-        print("4. Logout")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            print("\n--- Orders Ready for Payment ---")
-            order.view_pending_orders()
-            press_enter()
-            
-        elif choice == '2':
-            cashier_process_payment()
-            
-        elif choice == '3':
-            print("\n--- Recent Transactions ---")
-            billing.view_all_transactions()
-            press_enter()
-            
-        elif choice == '4':
+        print("3. Generate Receipt")
+        print("4. View Today's Sales")
+        print("5. View All Transactions")
+        print("6. Logout")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            pending = order.get_all_orders("Served")
+            print(f"\nSERVED ORDERS (Ready for Payment)")
+            for order_id, ord in pending.items():
+                print(
+                    f"Order #{order_id} | Table: {ord.get('table_number', 'N/A')} | ₱{ord['total_amount']:.2f}"
+                )
+        elif choice == "2":
+            process_payment_interactive()
+        elif choice == "3":
+            try:
+                trans_id = int(input("Transaction ID: "))
+                receipt = billing.generate_receipt(trans_id)
+                if receipt:
+                    print(receipt)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "4":
+            today = datetime.now().strftime("%Y-%m-%d")
+            sales = billing.get_daily_sales(today)
+            print(f"\nTODAY'S SALES")
+            print(f"Total: ₱{sales['total_sales']:,.2f}")
+            print(f"Transactions: {sales['transaction_count']}")
+        elif choice == "5":
+            billing.display_all_transactions()
+        elif choice == "6":
             um.logout()
-            print("\nLogged out successfully!")
-            press_enter()
             break
-        else:
-            print("\nInvalid choice!")
-            press_enter()
-
-
-def cashier_process_payment():
-    """Cashier - Process payment for an order"""
-    
-    clear_screen()
-    print("\n" + "="*60)
-    print("PROCESS PAYMENT")
-    print("="*60)
-    
-    order_id = input("\nOrder ID: ").strip()
-    
-    # Get order details
-    order_details = order.get_order_by_id(order_id)
-    
-    if not order_details:
-        print("\nOrder not found!")
-        press_enter()
-        return
-    
-    # Display order summary
-    print(f"\n--- Order #{order_id} Summary ---")
-    order.view_order_details(order_id)
-    
-    # Get order items and total
-    order_items = order.get_order_items(order_id)
-    total = sum(item['price'] * item['quantity'] for item in order_items)
-    
-    print(f"\nTotal Amount: ₱{total:.2f}")
-    
-    print("\nPayment Methods: Cash, Card, E-Wallet, GCash")
-    payment_type = input("Payment Method: ").strip()
-    amount_paid = float(input("Amount Paid: ").strip())
-    
-    if amount_paid < total:
-        print(f"\nInsufficient payment! Need ₱{total - amount_paid:.2f} more.")
-        press_enter()
-        return
-    
-    # Process payment
-    cashier = um.get_current_user()
-    trans_id = billing.process_payment(order_id, order_items, payment_type, amount_paid, cashier)
-    
-    if trans_id:
-        print(f"\nPayment processed successfully!")
-        print(f"Transaction ID: {trans_id}")
-        
-        if amount_paid > total:
-            change = amount_paid - total
-            print(f"Change: ₱{change:.2f}")
-        
-        # Generate and display receipt
-        print("\n" + "="*60)
-        receipt = billing.generate_receipt(trans_id, order_items)
-        print(receipt)
-        
-        # Update order status to Completed
-        order.update_order_status(order_id, 'Completed')
-    else:
-        print("\nPayment processing failed!")
-    
-    press_enter()
 
 
 def waiter_menu():
-    """Waiter access - Order taking and management"""
-    
+    """Waiter access - taking orders"""
+
     while um.get_current_user():
-        clear_screen()
-        current_user = um.get_current_user()
-        print("\n" + "="*60)
-        print(f"WAITER MENU - Logged in as: {current_user}")
-        print("="*60)
+        print("\n" + "=" * 60)
+        print("WAITER DASHBOARD")
+        print("=" * 60)
+        print(f"Logged in as: {um.users[um.get_current_user()]['name']}")
         print("\n1. View Menu")
-        print("2. Create New Order")
-        print("3. View My Orders")
-        print("4. Update Order Status")
-        print("5. View Table Status")
-        print("6. Logout")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            print("\n--- Available Menu ---")
-            menu.get_available_menu()
-            press_enter()
-            
-        elif choice == '2':
-            waiter_create_order()
-            
-        elif choice == '3':
-            waiter = um.get_current_user()
-            print(f"\n--- Orders by {waiter} ---")
-            order.view_orders_by_waiter(waiter)
-            press_enter()
-            
-        elif choice == '4':
-            order_id = input("\nOrder ID: ").strip()
-            print("Status: Pending, Preparing, Ready, Completed, Cancelled")
-            status = input("New Status: ").strip()
-            
-            if order.update_order_status(order_id, status):
-                print(f"\nOrder {order_id} updated to '{status}'!")
-            else:
-                print("\nFailed to update!")
-            press_enter()
-            
-        elif choice == '5':
-            print("\n--- Table Status ---")
-            order.view_table_status()
-            press_enter()
-            
-        elif choice == '6':
+        print("2. View Available Tables")
+        print("3. Create New Order")
+        print("4. View All Orders")
+        print("5. Update Order Status")
+        print("6. View Order Details")
+        print("7. Logout")
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            available = menu.get_available_menu()
+            menu.display_menu(available)
+        elif choice == "2":
+            order.display_all_tables()
+        elif choice == "3":
+            create_order_interactive()
+        elif choice == "4":
+            order.display_all_orders()
+        elif choice == "5":
+            order.display_all_orders()
+            try:
+                order_id = int(input("Order ID: "))
+                print("Status: Pending, In Progress, Served")
+                status = input("New Status: ").title()
+                order.update_order_status(order_id, status)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "6":
+            try:
+                order_id = int(input("Order ID: "))
+                summary = order.get_order_summary(order_id)
+                if summary:
+                    print(summary)
+            except ValueError:
+                print("Invalid input")
+        elif choice == "7":
             um.logout()
-            print("\nLogged out successfully!")
-            press_enter()
             break
-        else:
-            print("\nInvalid choice!")
-            press_enter()
 
-
-def waiter_create_order():
-    """Waiter - Create new order"""
-    
-    clear_screen()
-    print("\n" + "="*60)
-    print("📝 CREATE NEW ORDER")
-    print("="*60)
-    
-    # Customer info
-    customer_name = input("\nCustomer Name: ").strip()
-    
-    # Order type
-    print("\nOrder Type: Dine In, Takeout, Delivery")
-    order_type = input("Order Type: ").strip()
-    
-    table_num = None
-    if order_type.lower() == 'dine in':
-        table_num = input("Table Number: ").strip()
-    
-    # Show available menu
-    print("\n--- Available Menu ---")
-    available_items = menu.get_available_menu()
-    
-    # Collect order items
-    order_items = []
-    
-    while True:
-        print("\n" + "-"*60)
-        item_id = input("Item ID (or 'done' to finish): ").strip()
-        
-        if item_id.lower() == 'done':
-            break
-        
-        # Get item details from menu
-        item = menu.get_menu_item_by_id(item_id)
-        
-        if not item:
-            print("❌ Item not found!")
-            continue
-        
-        quantity = int(input(f"Quantity for {item['name']}: ").strip())
-        
-        order_items.append({
-            'item_id': item_id,
-            'item_name': item['name'],
-            'quantity': quantity,
-            'price': item['price']
-        })
-        
-        print(f"✅ Added {quantity}x {item['name']}")
-    
-    if not order_items:
-        print("\n❌ No items added!")
-        press_enter()
-        return
-    
-    # Display order summary
-    print("\n" + "="*60)
-    print("ORDER SUMMARY")
-    print("="*60)
-    total = 0
-    for item in order_items:
-        subtotal = item['price'] * item['quantity']
-        total += subtotal
-        print(f"{item['item_name']} x{item['quantity']} - ₱{subtotal:.2f}")
-    print(f"\n💰 Total: ₱{total:.2f}")
-    
-    confirm = input("\nConfirm order? (yes/no): ").strip().lower()
-    
-    if confirm == 'yes':
-        # Create order
-        waiter = um.get_current_user()
-        order_id = order.create_order(customer_name, order_items, order_type, waiter, table_num)
-        
-        if order_id:
-            print(f"\nOrder #{order_id} created successfully!")
-            
-            # Optional: Deduct inventory for ingredients
-            # This would require mapping menu items to ingredients
-            # inv.deduct_stock(...) for each ingredient
-        else:
-            print("\nFailed to create order!")
-    else:
-        print("\nOrder cancelled!")
-    
-    press_enter()
 
 def customer_menu():
-    """Customer access - View menu and place orders"""
-    
+    """Customer access - view menu and place orders"""
+
     while um.get_current_user():
-        clear_screen()
-        current_user = um.get_current_user()
-        print("\n" + "="*60)
-        print(f"👤 CUSTOMER MENU - Logged in as: {current_user}")
-        print("="*60)
+        print("\n" + "=" * 60)
+        print("CUSTOMER MENU")
+        print("=" * 60)
+        print(f"Welcome, {um.users[um.get_current_user()]['name']}!")
         print("\n1. View Menu")
-        print("2. Place Order")
+        print("2. Place Order (Takeout/Delivery)")
         print("3. View My Orders")
         print("4. Logout")
-        
-        choice = input("\nEnter choice: ").strip()
-        
-        if choice == '1':
-            print("\n--- Menu ---")
-            menu.view_menu_by_category()
-            press_enter()
-            
-        elif choice == '2':
-            customer_place_order()
-            
-        elif choice == '3':
-            customer = um.get_current_user()
-            print(f"\n--- Your Orders ---")
-            order.view_orders_by_customer(customer)
-            press_enter()
-            
-        elif choice == '4':
+
+        choice = input("\nChoice: ")
+
+        if choice == "1":
+            available = menu.get_available_menu()
+            menu.display_menu(available)
+        elif choice == "2":
+            create_order_interactive(customer_mode=True)
+        elif choice == "3":
+            customer_id = um.get_current_user()
+            print(f"\nYOUR ORDERS")
+            for order_id, ord in order.orders.items():
+                if ord["customer_id"] == customer_id:
+                    print(
+                        f"Order #{order_id} | {ord['order_type']} | {ord['status']} | ₱{ord['total_amount']:.2f}"
+                    )
+        elif choice == "4":
             um.logout()
-            print("\nLogged out successfully!")
-            press_enter()
             break
-        else:
-            print("\nInvalid choice!")
-            press_enter()
 
 
-def customer_place_order():
-    """Customer - Place order (similar to waiter but self-service)"""
-    
-    clear_screen()
-    print("\n" + "="*60)
-    print("🛒 PLACE ORDER")
-    print("="*60)
-    
-    customer_name = um.get_current_user()
-    
-    print("\nOrder Type: Takeout, Delivery")
-    order_type = input("Order Type: ").strip()
-    
-    # Show menu
-    print("\n--- Available Menu ---")
-    menu.get_available_menu()
-    
-    # Collect items
-    order_items = []
-    
-    while True:
-        print("\n" + "-"*60)
-        item_id = input("Item ID (or 'done'): ").strip()
-        
-        if item_id.lower() == 'done':
-            break
-        
-        item = menu.get_menu_item_by_id(item_id)
-        
-        if not item:
-            print("Item not found!")
-            continue
-        
-        quantity = int(input(f"Quantity: ").strip())
-        
-        order_items.append({
-            'item_id': item_id,
-            'item_name': item['name'],
-            'quantity': quantity,
-            'price': item['price']
-        })
-        
-        print(f"Added {quantity}x {item['name']}")
-    
-    if not order_items:
-        print("\n❌ No items!")
-        press_enter()
-        return
-    
-    # Summary
-    print("\n" + "="*60)
-    print("ORDER SUMMARY")
-    print("="*60)
-    total = 0
-    for item in order_items:
-        subtotal = item['price'] * item['quantity']
-        total += subtotal
-        print(f"{item['item_name']} x{item['quantity']} - ₱{subtotal:.2f}")
-    print(f"\n💰 Total: ₱{total:.2f}")
-    
-    confirm = input("\nConfirm? (yes/no): ").strip().lower()
-    
-    if confirm == 'yes':
-        order_id = order.create_order(customer_name, order_items, order_type)
-        
-        if order_id:
-            print(f"\nOrder #{order_id} placed!")
-            print("Please proceed to cashier for payment.")
-        else:
-            print("\nFailed!")
+def create_order_interactive(customer_mode=False):
+    """Interactive order creation"""
+
+    # Show available menu
+    available = menu.get_available_menu()
+    menu.display_menu(available)
+
+    # Get customer ID
+    if customer_mode:
+        customer_id = um.get_current_user()
     else:
-        print("\nCancelled!")
-    
-    press_enter()
+        customer_id = input("\nCustomer ID/Name: ")
+
+    # Get order type
+    if customer_mode:
+        print("\nOrder Type: 1. Takeout  2. Delivery")
+        type_choice = input("Choice: ")
+        order_type = "Takeout" if type_choice == "1" else "Delivery"
+    else:
+        print("\nOrder Type: 1. Dine In  2. Takeout  3. Delivery")
+        type_choice = input("Choice: ")
+        if type_choice == "1":
+            order_type = "Dine In"
+        elif type_choice == "2":
+            order_type = "Takeout"
+        else:
+            order_type = "Delivery"
+
+    # Select items
+    selected_items = []
+    print("\nSelect items (enter 0 to finish):")
+
+    while True:
+        try:
+            item_id = int(input("Item ID: "))
+            if item_id == 0:
+                break
+
+            if item_id not in available:
+                print("Item not available")
+                continue
+
+            quantity = int(input("Quantity: "))
+
+            item = available[item_id]
+            selected_items.append(
+                {
+                    "item_id": item_id,
+                    "item_name": item["item_name"],
+                    "quantity": quantity,
+                    "price": item["price"],
+                }
+            )
+            print(f"Added {quantity}x {item['item_name']}")
+
+        except ValueError:
+            print("Invalid input")
+
+    if not selected_items:
+        print("No items selected")
+        return
+
+    # Get table number for dine-in
+    table_num = None
+    if order_type == "Dine In":
+        order.display_all_tables()
+        try:
+            table_num = int(input("Table number: "))
+        except ValueError:
+            print("Invalid table number")
+            return
+
+    # Create order
+    order_id = order.create_order(customer_id, selected_items, order_type, table_num)
+
+    if order_id:
+        print(f"\nOrder #{order_id} created successfully!")
+        summary = order.get_order_summary(order_id)
+        print(summary)
+
+
+def process_payment_interactive():
+    """Interactive payment processing"""
+
+    # Show served orders
+    served = order.get_all_orders("Served")
+    if not served:
+        print("No orders ready for payment")
+        return
+
+    print("\n📋 ORDERS READY FOR PAYMENT:")
+    for order_id, ord in served.items():
+        print(
+            f"Order #{order_id} | {ord['order_type']} | Table: {ord.get('table_number', 'N/A')} | ₱{ord['total_amount']:.2f}"
+        )
+
+    try:
+        order_id = int(input("\nOrder ID to process: "))
+
+        if order_id not in order.orders:
+            print("Order not found")
+            return
+
+        ord = order.orders[order_id]
+        order_items = ord["order_items"]
+
+        # Show bill preview
+        discount_code = input("Discount code (leave blank for none): ")
+        bill = billing.calculate_total(
+            order_items, discount_code if discount_code else None
+        )
+
+        print(f"\n--- BILL ---")
+        print(f"Subtotal: ₱{bill['subtotal']:.2f}")
+        print(f"Service Charge: ₱{bill['service_charge']:.2f}")
+        if bill["discount"] > 0:
+            print(f"Discount: -₱{bill['discount']:.2f}")
+        print(f"Tax: ₱{bill['tax']:.2f}")
+        print(f"TOTAL: ₱{bill['total']:.2f}")
+
+        # Payment
+        print(f"\nPayment Types: {', '.join(billing.PAYMENT_TYPES)}")
+        payment_type = input("Payment Type: ").title()
+
+        if payment_type == "Cash":
+            amount_paid = float(input("Amount Paid: "))
+        else:
+            amount_paid = bill["total"]
+
+        cashier = um.get_current_user()
+
+        trans_id = billing.process_payment(
+            order_id,
+            order_items,
+            payment_type,
+            amount_paid,
+            discount_code if discount_code else None,
+            cashier,
+        )
+
+        if trans_id:
+            # Update order status to completed
+            order.update_order_status(order_id, "Completed")
+
+            # Generate receipt
+            print("\nGenerate receipt? (yes/no): ", end="")
+            if input().lower() == "yes":
+                receipt = billing.generate_receipt(trans_id, order_items)
+                print(receipt)
+
+    except ValueError:
+        print("Invalid input")
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 if __name__ == "__main__":
-    main_menu()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\nSystem interrupted. Goodbye!")
+    except Exception as e:
+        print(f"\nSystem error: {e}")

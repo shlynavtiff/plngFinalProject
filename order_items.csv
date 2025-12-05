@@ -4,3 +4,4 @@ order_id,item_id,item_name,quantity,price
 1001,3,Coke,3,50.0
 1002,2,Fries,3,80.0
 1002,3,Coke,3,50.0
+1003,1,Fried Rice,2,120.0
